@@ -1,25 +1,26 @@
 #include <TVout.h>
 #include <fontALL.h>
+#include <pollserial.h>
 
 #define W 136
 #define H 96
 
-#define DEFAULT_DELTA 1000
-#define DEFAULT_DELAY 200
+#define DEFAULT_DELAY 50
 
 TVout tv;
+pollserial pserial;
 
 unsigned long pulse_dur;
-unsigned long pulse_delta;
 
 void setup()  {
     tv.begin(PAL, W, H);
+    tv.set_hbi_hook(pserial.begin(9600));
+
     initOverlay();
 
     tv.select_font(font6x8);
     tv.fill(0);
 
-    pulse_delta = DEFAULT_DELTA;
     pulse_dur = DEFAULT_DELAY;
 }
 
@@ -45,8 +46,14 @@ ISR(INT0_vect) {
 }
 
 void loop() {
-    tv.draw_circle(tv.hres()/2, tv.vres()/2, tv.vres()/3, WHITE);
-    tv.delay(pulse_dur);
-    tv.clear_screen();
-    tv.delay(pulse_delta);
+    // check if data has been sent from the computer:
+    if (pserial.available()) {
+        // read the most recent byte (which will be from 0 to 255):
+        int val = pserial.read();
+        if (val) {
+            tv.draw_circle(tv.hres()/2, tv.vres()/2, tv.vres()/3, WHITE);
+            tv.delay(pulse_dur);
+            tv.clear_screen();
+        }
+    }
 }
