@@ -48,6 +48,11 @@ ISR(INT0_vect) {
 void loop() {
     // check if data has been sent from the computer:
     if (pserial.available()) {
+        int sensorValue = analogRead(A2);
+        pulse_dur = map(sensorValue, 0, 1023, 0, 1000);
+
+        if (pulse_dur == 0) return;
+
         // read the most recent byte (which will be from 0 to 255):
         int val = pserial.read();
         if (!val) {
