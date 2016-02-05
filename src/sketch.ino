@@ -2,10 +2,10 @@
 #include <fontALL.h>
 #include <pollserial.h>
 
-#define W 136
+#define W 128
 #define H 96
 
-#define DEFAULT_DELAY 50
+#define DEFAULT_DELAY 75
 
 TVout tv;
 pollserial pserial;
@@ -50,10 +50,22 @@ void loop() {
     if (pserial.available()) {
         // read the most recent byte (which will be from 0 to 255):
         int val = pserial.read();
-        if (val) {
+        if (!val) {
             tv.draw_circle(tv.hres()/2, tv.vres()/2, tv.vres()/3, WHITE);
-            tv.delay(pulse_dur);
-            tv.clear_screen();
         }
+
+        // dots
+        if (val == 0) {
+            tv.draw_rect(10, 10, 5, 5, WHITE);
+        } else if (val == 1) {
+            tv.draw_rect(W-20, 10, 5, 5, WHITE);
+        } else if (val == 2) {
+            tv.draw_rect(10, H-20, 5, 5, WHITE);
+        } else {
+            tv.draw_rect(W-20, H-20, 5, 5, WHITE);
+        }
+
+        tv.delay(pulse_dur);
+        tv.clear_screen();
     }
 }
