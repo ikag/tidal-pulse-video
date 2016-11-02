@@ -21,6 +21,8 @@ void setup()  {
     tv.select_font(font6x8);
     tv.fill(0);
 
+    tv.draw_circle(tv.hres()/2, tv.vres()/2, tv.vres()/3, WHITE);
+
     pulse_dur = DEFAULT_DELAY;
 }
 
@@ -46,6 +48,8 @@ ISR(INT0_vect) {
 }
 
 void loop() {
+  return;
+  
     // check if data has been sent from the computer:
     if (pserial.available()) {
         int sensorValue = analogRead(A2);
