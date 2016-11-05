@@ -2,7 +2,7 @@
 #include <fontALL.h>
 #include <pollserial.h>
 
-//#define DEBUG
+#define DEBUG
 
 #define W 128
 #define H 96
@@ -10,6 +10,10 @@
 #define DEFAULT_DELAY 75
 
 #define PB1_DRAW   3
+#define PB2_MANUAL 4
+#define PB3        5
+#define PB4        10 
+#define PB5        11
 
 #define POT1_POSX  A0       // position X
 #define POT2_POSY  A1       // position Y
@@ -34,6 +38,10 @@ void setup()  {
     initOverlay();
 
     pinMode(PB1_DRAW, INPUT_PULLUP);
+    pinMode(PB2_MANUAL, INPUT_PULLUP);
+    pinMode(PB3, INPUT_PULLUP);
+    pinMode(PB4, INPUT_PULLUP);
+    pinMode(PB5, INPUT_PULLUP);
 
     tv.select_font(font6x8);
     tv.fill(0);
@@ -83,6 +91,14 @@ void loop() {
         pserial.print(' ');
     }
     pserial.print(digitalRead(PB1_DRAW));
+    pserial.print(' ');
+    pserial.print(digitalRead(PB2_MANUAL));
+    pserial.print(' ');
+    pserial.print(digitalRead(PB3));
+    pserial.print(' ');
+    pserial.print(digitalRead(PB4));
+    pserial.print(' ');
+    pserial.print(digitalRead(PB5));
     pserial.println(';');
 #endif
 
