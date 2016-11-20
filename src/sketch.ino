@@ -2,12 +2,12 @@
 #include <fontALL.h>
 #include <pollserial.h>
 
-#define DEBUG
+//#define DEBUG
 
 #define W 128
 #define H 96
 
-#define DEFAULT_DELAY 75
+#define DEFAULT_DELAY 150
 
 #define PB1_DRAW   3
 #define PB2_MANUAL 4
@@ -26,6 +26,7 @@ TVout tv;
 pollserial pserial;
 
 bool tick, draw;
+int step, oldStep;
 byte x, y, size, shape;
 byte new_x, new_y, new_size, new_shape;
 unsigned long pulse_dur;
@@ -48,6 +49,7 @@ void setup()  {
 
     draw = false;
 
+    step = 0;
     pulse_ctr = 0;
     pulse_dur = DEFAULT_DELAY;
 
@@ -106,6 +108,8 @@ void loop() {
     if (pserial.available()) {
         // read the most recent byte (which will be from 0 to 255):
         int val = pserial.read();
+        oldStep = step;
+        step = val;
         tick = !val;
         if (tick) draw = true;
     } else {
@@ -113,12 +117,19 @@ void loop() {
     }
 
     if (draw) {
-        new_shape = (analogRead(POT3_ANGLE) < 512) ? 0 : 1;
+        int val = analogRead(POT3_ANGLE);
+        if (val < 341) {
+            new_shape = 0;
+        } else if (val < 682) {
+            new_shape = 1;
+        } else {
+            new_shape = 2;
+        }
         new_size = map(analogRead(POT4_SIZE), 0, 1023, 0, H/2);
         new_x = map(analogRead(POT1_POSX), 0, 1023, new_size, W-new_size);
         new_y = map(analogRead(POT2_POSY), 0, 1023, new_size, H-new_size);
 
-        if (tick || new_shape != shape || new_size != size || new_x != x || new_y != y) {
+        if (tick || oldStep != step || new_shape != shape || new_size != size || new_x != x || new_y != y) {
             shape = new_shape;
             size = new_size;
             x = new_x;
@@ -127,19 +138,35 @@ void loop() {
             tv.clear_screen();
 
             switch (shape) {
-            case 0:
-                tv.draw_circle(x, y, size, WHITE);
-                break;
-            case 1:
-                tv.draw_rect(x-size, y-size, size*2, size*2, WHITE);
-                break;
+                case 0:
+                    tv.draw_circle(x, y, size, WHITE);
+                    break;
+                case 1:
+                    tv.draw_rect(x-size, y-size, size*2, size*2, WHITE);
+                    break;
+                case 2:
+                    switch (step) {
+                        case 0:
+                            tv.draw_line(x-size, y-size, x-size, y+size, WHITE);
+                            break;
+                        case 1:
+                            tv.draw_line(x-size, y+size, x+size, y+size, WHITE);
+                            break;
+                        case 2:
+                            tv.draw_line(x+size, y+size, x+size, y-size, WHITE);
+                            break;
+                        case 3:
+                            tv.draw_line(x-size, y-size, x+size, y-size, WHITE);
+                            break;
+                    }
+                    break;
             }
         }
     }
 
     pulse_ctr++;
     if (pulse_ctr > pulse_dur) {
-        pulse_dur = map(analogRead(POT6_PDUR), 0, 1023, 0, 1000);
+        //pulse_dur = map(analogRead(POT6_PDUR), 0, 1023, 0, 1000);
         pulse_ctr = 0;
         draw = false;
         tv.clear_screen();

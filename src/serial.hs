@@ -27,5 +27,5 @@ onTick ard current ticks =
        hFlush stdout
        return ()
 
-main = do ard <- openSerial "/dev/ttyACM0" defaultSerialSettings {commSpeed = CS9600}
+main = do ard <- openSerial "/dev/ttyACM1" defaultSerialSettings {commSpeed = CS9600}
           clockedTick 4 $ onTick ard
