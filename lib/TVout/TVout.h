@@ -108,11 +108,6 @@ public:
 	void set_vbi_hook(void (*func)());
 	void set_hbi_hook(void (*func)());
 
-	//tone functions
-	void tone(unsigned int frequency, unsigned long duration_ms);
-	void tone(unsigned int frequency);
-	void noTone();
-	
 	// BEGIN Video Experimenter
 	void capture();
 	void resume();
