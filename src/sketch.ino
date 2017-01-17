@@ -9,11 +9,11 @@
 
 #define DEFAULT_DELAY 150
 
-#define PB1_DRAW   3
-#define PB2_MANUAL 4
-#define PB3        5
-#define PB4        10 
-#define PB5        11
+#define PB1_DRAW   4
+#define PB2_MANUAL 11
+#define PB3        6
+#define PB4        12
+#define PB5        10
 
 #define POT1_POSX  A0       // position X
 #define POT2_POSY  A1       // position Y
@@ -38,12 +38,6 @@ void setup()  {
 
     initOverlay();
 
-    pinMode(PB1_DRAW, INPUT_PULLUP);
-    pinMode(PB2_MANUAL, INPUT_PULLUP);
-    pinMode(PB3, INPUT_PULLUP);
-    pinMode(PB4, INPUT_PULLUP);
-    pinMode(PB5, INPUT_PULLUP);
-
     tv.select_font(font6x8);
     tv.fill(0);
 
@@ -57,6 +51,12 @@ void setup()  {
     x = tv.hres() / 2;
     y = tv.vres() / 2;
     size = tv.vres() / 3;
+
+    pinMode(PB1_DRAW, INPUT_PULLUP);
+    pinMode(PB2_MANUAL, INPUT_PULLUP);
+    pinMode(PB3, INPUT_PULLUP);
+    pinMode(PB4, INPUT_PULLUP);
+    pinMode(PB5, INPUT_PULLUP);
 }
 
 // Initialize ATMega registers for video overlay capability.
@@ -92,15 +92,35 @@ void loop() {
         pserial.print(value, DEC);
         pserial.print(' ');
     }
-    pserial.print(digitalRead(PB1_DRAW));
+    if (digitalRead(PB1_DRAW) == HIGH) {
+        pserial.print('0');
+    } else {
+        pserial.print('1');
+    }
     pserial.print(' ');
-    pserial.print(digitalRead(PB2_MANUAL));
+    if (digitalRead(PB2_MANUAL) == HIGH) {
+        pserial.print('0');
+    } else {
+        pserial.print('1');
+    }
     pserial.print(' ');
-    pserial.print(digitalRead(PB3));
+    if (digitalRead(PB3) == HIGH) {
+        pserial.print('0');
+    } else {
+        pserial.print('1');
+    }
     pserial.print(' ');
-    pserial.print(digitalRead(PB4));
+    if (digitalRead(PB4) == HIGH) {
+        pserial.print('0');
+    } else {
+        pserial.print('1');
+    }
     pserial.print(' ');
-    pserial.print(digitalRead(PB5));
+    if (digitalRead(PB5) == HIGH) {
+        pserial.print('0');
+    } else {
+        pserial.print('1');
+    }
     pserial.println(';');
 #endif
 
