@@ -7,7 +7,7 @@
 #define W 128
 #define H 96
 
-#define DEFAULT_DELAY 150
+#define DEFAULT_DELAY 250
 
 #define PB1_DRAW   4
 #define PB2_MANUAL 11
@@ -22,6 +22,8 @@
 #define POT5_TEMPO A4       // tempo / step size
 #define POT6_PDUR  A5       // pulse duration
 
+#define SAMPLES 16
+
 TVout tv;
 pollserial pserial;
 
@@ -31,6 +33,15 @@ byte x, y, size, shape;
 byte new_x, new_y, new_size, new_shape;
 unsigned long pulse_dur;
 unsigned long pulse_ctr;
+
+byte samples_i = 0;
+byte x_samp[SAMPLES] = {};
+byte y_samp[SAMPLES] = {};
+byte size_samp[SAMPLES] = {};
+unsigned int x_total, x_avg;
+unsigned int y_total, y_avg;
+unsigned int size_total, size_avg;
+
 
 void setup()  {
     tv.begin(PAL, W, H);
@@ -47,11 +58,18 @@ void setup()  {
     pulse_ctr = 0;
     pulse_dur = DEFAULT_DELAY;
 
-    // Set default parameters for shape
-    x = tv.hres() / 2;
-    y = tv.vres() / 2;
-    size = tv.vres() / 3;
+    // Fill buffers with default parameters for x, y and shape
+    for (byte i = 0; i < SAMPLES; i++) {
+        x_samp[i] = tv.hres() / 2;
+        y_samp[i] = tv.vres() / 2;
+        size_samp[i] = tv.vres() / 3;
 
+        x_total += x_samp[i];
+        y_total += y_samp[i];
+        size_total += size_samp[i];
+    }
+
+    // Use pull-up resistors on push button inputs, as they are wired to ground
     pinMode(PB1_DRAW, INPUT_PULLUP);
     pinMode(PB2_MANUAL, INPUT_PULLUP);
     pinMode(PB3, INPUT_PULLUP);
@@ -124,13 +142,45 @@ void loop() {
     pserial.println(';');
 #endif
 
+    // Read Size pot
+    size_total -= size_samp[samples_i];
+    size_samp[samples_i] = map(analogRead(POT4_SIZE), 0, 1023, 0, H/2);
+    size_total += size_samp[samples_i];
+
+    // Read X pot
+    x_total -= x_samp[samples_i];
+    x_samp[samples_i] = map(analogRead(POT1_POSX), 0, 1023, new_size, W-new_size);
+    x_total += x_samp[samples_i];
+
+    // Read Y pot
+    y_total -= y_samp[samples_i];
+    y_samp[samples_i] = map(analogRead(POT2_POSY), 0, 1023, new_size, H-new_size);
+    y_total += y_samp[samples_i];
+
+    // Increment samples index
+    samples_i++;
+    if (samples_i >= SAMPLES) samples_i = 0;
+
+    // Calculate averages from totals
+    x_avg = x_total / SAMPLES;
+    y_avg = y_total / SAMPLES;
+    size_avg = size_total / SAMPLES;
+
+    pulse_ctr++;
+    if (pulse_ctr > pulse_dur) {
+        //pulse_dur = map(analogRead(POT6_PDUR), 0, 1023, 1, 10) * 100;
+        pulse_ctr = 0;
+        //draw = false;
+        tv.clear_screen();
+    }
+
     // check if data has been sent from the computer:
     if (pserial.available()) {
         // read the most recent byte (which will be from 0 to 255):
         int val = pserial.read();
         oldStep = step;
         step = val;
-        tick = !val;
+        tick = (val == 0);
         if (tick) draw = true;
     } else {
         tick = false;
@@ -145,11 +195,12 @@ void loop() {
         } else {
             new_shape = 2;
         }
-        new_size = map(analogRead(POT4_SIZE), 0, 1023, 0, H/2);
-        new_x = map(analogRead(POT1_POSX), 0, 1023, new_size, W-new_size);
-        new_y = map(analogRead(POT2_POSY), 0, 1023, new_size, H-new_size);
+        //new_shape = (analogRead(POT3_ANGLE) < 512) ? 0 : 1;
+        new_size = size_avg;
+        new_x = x_avg;
+        new_y = y_avg;
 
-        if (tick || oldStep != step || new_shape != shape || new_size != size || new_x != x || new_y != y) {
+        if (tick || new_shape != shape || new_size != size || new_x != x || new_y != y) {
             shape = new_shape;
             size = new_size;
             x = new_x;
@@ -159,11 +210,17 @@ void loop() {
 
             switch (shape) {
                 case 0:
-                    tv.draw_circle(x, y, size, WHITE);
+                    tv.draw_line(x-size, y+size, x+size, y+size, WHITE);
+                    tv.draw_line(x+size, y+size, x, y-size, WHITE);
+                    tv.draw_line(x, y-size, x-size, y+size, WHITE);
                     break;
                 case 1:
                     tv.draw_rect(x-size, y-size, size*2, size*2, WHITE);
                     break;
+                case 2:
+                    tv.draw_circle(x, y, size, WHITE);
+                    break;
+/*
                 case 2:
                     switch (step) {
                         case 0:
@@ -180,15 +237,8 @@ void loop() {
                             break;
                     }
                     break;
+*/
             }
         }
-    }
-
-    pulse_ctr++;
-    if (pulse_ctr > pulse_dur) {
-        //pulse_dur = map(analogRead(POT6_PDUR), 0, 1023, 0, 1000);
-        pulse_ctr = 0;
-        draw = false;
-        tv.clear_screen();
     }
 }
